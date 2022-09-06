@@ -1,2 +1,2 @@
 from .project import Project
-from .overlay import Overlay
+from .merger import Merger
