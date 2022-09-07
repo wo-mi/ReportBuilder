@@ -1,40 +1,62 @@
 <style>
 body{
-    margin-left: 0px;
-    margin-top: 0px;
-    margin-right: 0px;
-    margin-bottom: 0px;
-    height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  margin-left: 0px;
+  margin-top: 0px;
+  margin-right: 0px;
+  margin-bottom: 0px;
+  height: 100%;
 }
 #header {
-  position: relative;
-  background: rgba(255, 255, 255, 1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(240, 240, 240, 1);
   height: 30mm;
   border-bottom: 1px solid;
   border-width: thin;
+  width: 100%;
 }
 
 #footer {
   position: absolute;
   bottom: 0;
   left: 0;
-  background: rgba(255, 255, 255, 1);
+  background: rgba(240, 240, 240, 1);
   height: 30mm;
   border-top: 1px solid;
   border-width: thin;
+  width: 100%;
 }
 
 
 </style>
-</style>
+
 <div >
 
     <div id="header">
-        <h1>Title {{ page_number }}</h1>        
+      <div style="margin: 15px">
+
+        <div style="display: inline-block;">
+          <img style="width: 90px; position: relative; top: 10px;" src="{{ static_file('logo.png') }}"></img>
+       
+        </div>
+        <div style="display: inline-block;">
+          <div style="position: absolute; top: 20px;"><b>Project:</b> {{ project["title"] }}</div>
+          <div style="position: absolute; top: 40px;"><b>Document:</b> {{ document["filename"] }}</div>
+        </div>
+
+      </div> 
     </div>
 
 
-    <div id="footer">And in the last place, where this might not be the case, they would be of long standing, would have taken deep root, and would not easily be extirpated. The scheme of revising the constitution, in order to correct recent breaches of it, as well as for other purposes, has been actually tried in one of the States.</div>
+    <div id="footer">
+      <div style="margin: 5px">
+
+        <div style="text-align: center;">Page nr {{ page["full_number"] }}</div>
+      
+      </div>
+    </div>
 
 
 </div>

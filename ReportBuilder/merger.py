@@ -1,7 +1,7 @@
 import os
-from PyPDF2 import PdfWriter, PdfReader
+from PyPDF2 import PdfWriter, PdfFileReader
 import jinja2
-import subprocess
+import tempfile
 
 class Merger:
 
@@ -19,7 +19,7 @@ class Merger:
                 print("#", end="")
 
                 if document.template == "":
-                    writer.addPage(page.reader_page)
+                    writer.addPage(page.get())
                 else:
 
                     if document.template not in self.templates:
@@ -27,17 +27,22 @@ class Merger:
                                             "{document.template}")
 
                     template = self.templates[document.template]
-                    template.render(page_number = page.number)
+                    html = template.render(project = self.project.info,
+                                            document = document.info,
+                                            page = page.info)
 
-                    overlay = Overlay(template)
-                    overlay_pdf = overlay.get()
-
-                    page.reader_page.merge_page(overlay_pdf,True)
-                    writer.addPage(page.reader_page)
+                    overlay = Overlay()
+                    overlay_pdf = overlay.build(html)     
+                    
+                    new_page = page.get()
+                    new_page.merge_page(overlay_pdf,True)
+                    writer.addPage(new_page)
             
             print()
 
-        with open('output.pdf', 'wb') as f:
+        writer.page_layout = "/SinglePage"
+
+        with open(f"{self.project.title}.pdf", 'wb') as f:
             writer.write(f)
 
     def get_templates(self):
@@ -46,7 +51,12 @@ class Merger:
         result = {}
 
         for template_filename in os.listdir(templates_dir):
-            with open(os.path.join(templates_dir, template_filename)) as f:
+            if not os.path.splitext(template_filename)[1] == ".html":
+                continue
+
+            template_file_path = os.path.join(templates_dir, template_filename)
+
+            with open(template_file_path, encoding="utf-8") as f:
                 html = f.read()   
 
             template_name = os.path.splitext(template_filename)[0]
@@ -64,68 +74,47 @@ class Template:
     
     def render(self, **kwargs):
         environment = jinja2.Environment()
+
+        func = lambda filename: "file:///" + os.path.join(
+                        os.path.abspath("ReportBuilder/templates/"),filename)
+
+        environment.globals['static_file'] = func
         template = environment.from_string(self.html)
 
         rendered = template.render(**kwargs)
 
-        path = "ReportBuilder\\tmp\\template.html"
-
-        with open(path, "w") as f:
-            f.write(rendered)
+        return rendered
 
 
 class Overlay:
-    def __init__(self, template):
-        self.template = template
+    i = 1
 
-    # def __new__(self):
-        
-        # os.system("third-party\\wkhtmltox\\wkhtmltopdf.exe --margin-bottom 0 --margin-top 0 --margin-left 0 --margin-right 0 ReportBuilder\\templates\\default.html ReportBuilder\\tmp\\overlay.pdf")
-        # # self.overlay()
-        # overlay_reader = PdfReader(open('ReportBuilder\\tmp\\overlay.pdf', 'rb'))
-    
-    def get(self):
-        
-        # subprocess.run(["third-party\\wkhtmltox\\wkhtmltopdf.exe",
-        #  "--margin-bottom 0 --margin-top 0 --margin-left 0 --margin-right 0",
-        #  "ReportBuilder\\tmp\\template.html",
-        #  "ReportBuilder\\tmp\\overlay.pdf"])
+    def build(self, html):
+        num = __class__.i
+        __class__.i += 1
 
+        system_temp_dir = tempfile.gettempdir()
+        program_temp_dir = os.path.join(system_temp_dir, "ReportBuilder")
+
+        if not os.path.isdir(program_temp_dir):
+            os.mkdir(program_temp_dir)
+
+        template_file_path = os.path.join(program_temp_dir,"overlay.html")
+        overlay_file_path = os.path.join(program_temp_dir,f"overlay{num}.pdf")
+
+        with open(template_file_path, "w") as f:
+            f.write(html)
 
         os.system(
-        "third-party\\wkhtmltox\\wkhtmltopdf.exe "
-        "--log-level warn "
-        "--margin-bottom 0 --margin-top 0 --margin-left 0 --margin-right 0 "
-        "ReportBuilder\\tmp\\template.html "
-        "ReportBuilder\\tmp\\overlay.pdf"
+        f"third-party\\wkhtmltox\\wkhtmltopdf.exe "
+        f"--log-level warn "
+        f"--enable-local-file-access "
+        f"--margin-bottom 0 --margin-top 0 --margin-left 0 --margin-right 0 "
+        f"{template_file_path} "
+        f"{overlay_file_path}"
         )
 
-        overlay_reader = PdfReader(open('ReportBuilder\\tmp\\overlay.pdf', 'rb'))
-        return overlay_reader.pages[0]
+        overlay_reader = PdfFileReader(open(overlay_file_path, 'rb'))
+        result = overlay_reader.pages[0]
 
-    # def overlay(self):
-    #     # minutesFile = open('output.pdf', 'rb')
-    #     reader = PdfReader('example_project\\document 1.pdf')
-    #     writer = PdfWriter()    
-        
-        
-        
-    #     minutesFirstPage = reader.pages[0]
-    #     pdfWatermarkReader = PdfReader(open('ReportBuilder\\tmp\\overlay.pdf', 'rb'))
-    #     minutesFirstPage.merge_page(pdfWatermarkReader.pages[0],True)
-        
-    #     # print(minutesFirstPage.get('/Rotate'))
-
-    #     writer.addPage(minutesFirstPage)
-
-    #     for pageNum in range(1, reader.numPages):
-    #         pageObj = reader.getPage(pageNum)
-    #         writer.addPage(pageObj)
-            
-    #     # resultPdfFile = open('watermarkedCover.pdf', 'wb')
-    #     # pdfWriter.write(resultPdfFile)
-    #     # minutesFile.close()
-    #     # resultPdfFile.close()
-
-    #     with open('watermarkedCover.pdf', "wb") as fp:
-    #         writer.write(fp)
+        return result

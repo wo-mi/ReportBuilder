@@ -1,0 +1,37 @@
+<style>
+  body{
+    font-family: "Liberation Mono", "Courier New", monospace;
+    font-size: 14px;
+    margin-left: 0px;
+    margin-top: 0px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    height: 100%;
+  }
+  #content {
+    position: absolute;
+    border: 1px solid;  
+
+    top: 30mm;
+    bottom: 30mm;
+    left:0;
+    right:0;
+    margin-left:auto;
+    margin-right:auto;
+    width: 180mm;
+  }
+  ul{
+    list-style-type:none;
+  }
+</style>
+
+<div id="content">
+  <h2 style="text-align: center;">{{ title }}</h2>
+
+  <ul>
+    {% for item in items %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+
+</div>
