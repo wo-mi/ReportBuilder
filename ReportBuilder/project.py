@@ -1,4 +1,4 @@
-import os
+import os, shutil
 from .document import Document
 from .page import Page
 from .table_of_content import TableOfContent
@@ -10,7 +10,8 @@ class Project:
     def __init__(self, path):
         self.title = os.path.basename(path)
         self.documents = []
-        self.table_of_content = TableOfContent(self)
+        self.temp_output_pdf_path = None
+        # self.table_of_content = TableOfContent(self)
 
         if not os.path.isdir(path):
             raise NotADirectoryError("Wrong path to project folder")
@@ -26,6 +27,9 @@ class Project:
         self.set_documents_in_order()
 
         self.number_documents()
+
+        self.table_of_content = TableOfContent(self)
+        self.table_of_content.insert()
 
     def find_documents(self):
         filenames = os.listdir(self.path)
@@ -46,9 +50,9 @@ class Project:
         if "title" in self.config.data:
             self.title = self.config.data["title"]
 
-        if "template" in self.config.data:
+        if "overlay_template" in self.config.data:
             for document in self.documents:
-                document.template = self.config.data["template"]
+                document.overlay_template = self.config.data["overlay_template"]
 
         for document in self.documents:
             document.apply_config(self.config)
@@ -69,8 +73,9 @@ class Project:
     def number_documents(self):
         i = 1
         for document in self.documents:
-            document.number = i
-            i+=1
+            if document.show_in_toc:
+                document.number = i
+                i+=1
 
         last_page_number = 0
         for document in self.documents:
@@ -78,7 +83,13 @@ class Project:
     
     def merge(self):
         merger = Merger(self)
-        merger.merge()
+        self.temp_output_pdf_path = merger.merge()
+
+    def save(self,dir_path=""):
+        destination = os.path.join(dir_path, f"{self.title}.pdf")
+        # print(self.temp_output_pdf_path)
+        # print(destination)
+        shutil.move(self.temp_output_pdf_path, destination)
 
     @property
     def info(self):

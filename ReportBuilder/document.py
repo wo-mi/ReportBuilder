@@ -9,11 +9,12 @@ class Document():
         self.path = path
         self.filename = os.path.basename(self.path)
         self.title = self.filename
-        self.template = "default"
+        self.overlay_template = "default"
         self.config = None
         self.start_number = None
         self.number_prefix = ""
         self.number_suffix = ""
+        self.show_in_toc = True
 
         self.pdf_reader = self.get_pdf_reader()     
            
@@ -31,8 +32,8 @@ class Document():
         if "title" in document_config_json:
             self.title = document_config_json["title"]
 
-        if "template" in document_config_json:
-            self.template = document_config_json["template"]
+        if "overlay_template" in document_config_json:
+            self.overlay_template = document_config_json["overlay_template"]
 
         if "part" in document_config_json:
             range_strng = document_config_json["part"]
@@ -46,6 +47,10 @@ class Document():
 
         if "start_number" in document_config_json:
             self.start_number = int(document_config_json["start_number"])
+
+        if "show_in_toc" in document_config_json:
+            if document_config_json["show_in_toc"].lower() == "false":
+                self.show_in_toc = False
 
     def get_pdf_number_of_pages(self):
         return len(self.pdf_reader.pages)
@@ -111,7 +116,7 @@ class Document():
             "path" : self.path,
             "filename" : self.filename,
             "title" : self.title,
-            "template" : self.template
+            "template" : self.overlay_template
         }
         return info_dict
 

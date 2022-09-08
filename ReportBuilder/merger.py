@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from PyPDF2 import PdfWriter, PdfFileReader
 import jinja2
 import tempfile
@@ -18,21 +19,29 @@ class Merger:
             for page in document.pages:
                 print("#", end="")
 
-                if document.template == "":
+                if document.overlay_template == "":
                     writer.addPage(page.get())
                 else:
 
-                    if document.template not in self.templates:
+                    if document.overlay_template not in self.templates:
                         raise AttributeError(f"Can't find template "
                                             "{document.template}")
 
-                    template = self.templates[document.template]
-                    html = template.render(project = self.project.info,
+                    template = self.templates[document.overlay_template]
+
+                    context = {
+                        'date' : datetime.now().strftime("%m.%d.%Y"),
+                        'time' : datetime.now().strftime("%H:%M:%S"),
+                        'datetime' : datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+                        }
+
+                    html = template.render(context=context,
+                                            project = self.project.info,
                                             document = document.info,
                                             page = page.info)
 
                     overlay = Overlay()
-                    overlay_pdf = overlay.build(html)     
+                    overlay_pdf = overlay.build(html, page)     
                     
                     new_page = page.get()
                     new_page.merge_page(overlay_pdf,True)
@@ -40,10 +49,27 @@ class Merger:
             
             print()
 
+        temp_output_pdf_path = self.save_temp_pdf(writer)
+
+        return temp_output_pdf_path
+
+    def save_temp_pdf(self, writer):
+
         writer.page_layout = "/SinglePage"
 
-        with open(f"{self.project.title}.pdf", 'wb') as f:
-            writer.write(f)
+        system_temp_dir = tempfile.gettempdir()
+        program_temp_dir = os.path.join(system_temp_dir, "ReportBuilder")
+
+        if not os.path.isdir(program_temp_dir):
+            os.mkdir(program_temp_dir)
+
+        output_file_temp_path = os.path.join(program_temp_dir, "output.pdf")
+
+        with open(output_file_temp_path, 'wb') as f:
+            writer.write(f)        
+
+        return output_file_temp_path 
+
 
     def get_templates(self):
         templates_dir = os.path.join("ReportBuilder", "templates")
@@ -89,7 +115,7 @@ class Template:
 class Overlay:
     i = 1
 
-    def build(self, html):
+    def build(self, html, page):
         num = __class__.i
         __class__.i += 1
 
@@ -105,11 +131,19 @@ class Overlay:
         with open(template_file_path, "w") as f:
             f.write(html)
 
+        # wkhtmltox_file_path = "third-party\\wkhtmltox\\wkhtmltopdf.exe"
+        wkhtmltox_file_path = "c:\\wkhtmltox\\wkhtmltopdf.exe"
+
+        if not os.path.exists(wkhtmltox_file_path):
+            raise FileNotFoundError(f"Can't find file: {wkhtmltox_file_path}")
+
         os.system(
-        f"third-party\\wkhtmltox\\wkhtmltopdf.exe "
+        f"{wkhtmltox_file_path} "
         f"--log-level warn "
         f"--enable-local-file-access "
+        f"--page-width {page.width} --page-height {page.height} "
         f"--margin-bottom 0 --margin-top 0 --margin-left 0 --margin-right 0 "
+
         f"{template_file_path} "
         f"{overlay_file_path}"
         )

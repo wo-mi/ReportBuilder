@@ -12,11 +12,11 @@ class Page:
 
     @property
     def width(self):
-        return int(self.reader.pages[self.reader_page_number].mediabox[2])
+        return int(float(self.reader.pages[self.reader_page_number].mediabox.getWidth()) * (25.4/72))
 
     @property
     def height(self):
-        return int(self.reader.pages[self.reader_page_number].mediabox[3])
+        return int(float(self.reader.pages[self.reader_page_number].mediabox.getHeight()) * (25.4/72))
 
     @property
     def full_number(self):

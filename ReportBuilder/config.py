@@ -42,6 +42,14 @@ class Config:
 
         return result
 
+    def get_toc_config_json(self):
+        if "table_of_content" in self.data:
+            toc_config = self.data["table_of_content"]  
+            return toc_config
+        else:
+            return None
+
+
     def parse_config_file(self):
         try:
             with open(self.path) as f:
