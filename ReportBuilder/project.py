@@ -5,23 +5,31 @@ from .table_of_content import TableOfContent
 from .config import Config
 from .merger import Merger
 
+
+CONFIG_FILENAME = "config.json"
+
 class Project:
 
-    def __init__(self, path):
-        self.title = os.path.basename(path)
+    def __init__(self):
+        self.title = ""
         self.documents = []
-        self.temp_output_pdf_path = None
-        # self.table_of_content = TableOfContent(self)
+        self.output_filename = ""
 
+    def build_from_dir(self, path):
         if not os.path.isdir(path):
-            raise NotADirectoryError("Wrong path to project folder")
-        
-        self.path = path
+            raise NotADirectoryError(f"Wrong path to project folder: {path}")
 
-        self.config = Config(self.path)
+        self.title = os.path.basename(path)
+        self.output_filename = os.path.basename(path)
 
-        self.find_documents()
+        self.config = Config()
+        self.config.load_from_file(os.path.join(path, CONFIG_FILENAME))
 
+        self.find_documents_in_dir(path)
+
+        self.build()
+
+    def build(self):
         self.apply_config()
 
         self.set_documents_in_order()
@@ -31,24 +39,28 @@ class Project:
         self.table_of_content = TableOfContent(self)
         self.table_of_content.insert()
 
-    def find_documents(self):
-        filenames = os.listdir(self.path)
+    def find_documents_in_dir(self, path):
+        filenames = os.listdir(path)
 
         for filename in filenames:
-            if filename == self.config.filename:
+            if filename == CONFIG_FILENAME:
                 continue
             if filename.startswith("."):
                 continue
 
-            document_path = os.path.join(self.path, filename)
-            document = Document(document_path)
+            document_path = os.path.join(path, filename)
+            document = Document()
+            document.build_from_file(document_path)
 
             self.documents.append(document)
 
     def apply_config(self):
-        
+
         if "title" in self.config.data:
             self.title = self.config.data["title"]
+
+        if "output_filename" in self.config.data:
+            self.output_filename = self.config.data["output_filename"]
 
         if "overlay_template" in self.config.data:
             for document in self.documents:
@@ -80,28 +92,24 @@ class Project:
         last_page_number = 0
         for document in self.documents:
             last_page_number = document.number_pages(last_page_number)
-    
+
     def merge(self):
         merger = Merger(self)
         self.temp_output_pdf_path = merger.merge()
 
     def save(self,dir_path=""):
-        destination = os.path.join(dir_path, f"{self.title}.pdf")
-        # print(self.temp_output_pdf_path)
-        # print(destination)
+        destination = os.path.join(dir_path, f"{self.output_filename}.pdf")
         shutil.move(self.temp_output_pdf_path, destination)
 
     @property
     def info(self):
         info_dict = {
-            "title" : self.title,
-            "path" : self.path
+            "title" : self.title
         }
         return info_dict
 
     def __str__(self):
-        strng = f"Project: '{self.title}'\n" \
-                f"Path: '{self.path}'\n"
+        strng = f"Project: '{self.title}'\n"
 
         first_line = True
         for document in self.documents:
@@ -109,6 +117,6 @@ class Project:
                 strng += f"Documents: '{document}'\n"
                 first_line = False
             else:
-                strng += f"           '{document}'\n"                
+                strng += f"           '{document}'\n"
 
         return strng

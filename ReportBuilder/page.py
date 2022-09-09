@@ -4,7 +4,7 @@ class Page:
         self.number_prefix = ""
         self.number_suffix = ""
 
-        self.reader = reader        
+        self.reader = reader
         self.reader_page_number = reader_page_number
 
     def get(self):
@@ -12,11 +12,15 @@ class Page:
 
     @property
     def width(self):
-        return int(float(self.reader.pages[self.reader_page_number].mediabox.getWidth()) * (25.4/72))
+        return round(
+            float(self.reader.pages[self.reader_page_number].mediabox.width)
+            * (25.4/72))
 
     @property
     def height(self):
-        return int(float(self.reader.pages[self.reader_page_number].mediabox.getHeight()) * (25.4/72))
+        return round(
+            float(self.reader.pages[self.reader_page_number].mediabox.height) 
+            * (25.4/72))
 
     @property
     def full_number(self):

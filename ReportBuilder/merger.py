@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from PyPDF2 import PdfWriter, PdfFileReader
+from PyPDF2 import PdfWriter, PdfReader
 import jinja2
 import tempfile
 
@@ -20,12 +20,12 @@ class Merger:
                 print("#", end="")
 
                 if document.overlay_template == "":
-                    writer.addPage(page.get())
+                    writer.add_page(page.get())
                 else:
 
                     if document.overlay_template not in self.templates:
                         raise AttributeError(f"Can't find template "
-                                            "{document.template}")
+                                            f"{document.template}")
 
                     template = self.templates[document.overlay_template]
 
@@ -42,11 +42,11 @@ class Merger:
 
                     overlay = Overlay()
                     overlay_pdf = overlay.build(html, page)     
-                    
+
                     new_page = page.get()
                     new_page.merge_page(overlay_pdf,True)
-                    writer.addPage(new_page)
-            
+                    writer.add_page(new_page)
+
             print()
 
         temp_output_pdf_path = self.save_temp_pdf(writer)
@@ -54,7 +54,6 @@ class Merger:
         return temp_output_pdf_path
 
     def save_temp_pdf(self, writer):
-
         writer.page_layout = "/SinglePage"
 
         system_temp_dir = tempfile.gettempdir()
@@ -72,7 +71,9 @@ class Merger:
 
 
     def get_templates(self):
-        templates_dir = os.path.join("ReportBuilder", "templates")
+        basedir = os.path.dirname(os.path.abspath(__file__))
+
+        templates_dir = os.path.join(basedir, "templates")
 
         result = {}
 
@@ -97,14 +98,16 @@ class Template:
     def __init__(self, name, html):
         self.name = name
         self.html = html
-    
+
     def render(self, **kwargs):
+        basedir = os.path.dirname(os.path.abspath(__file__))
+
         environment = jinja2.Environment()
 
         func = lambda filename: "file:///" + os.path.join(
-                        os.path.abspath("ReportBuilder/templates/"),filename)
+                        basedir, "templates", filename)
 
-        environment.globals['static_file'] = func
+        environment.globals['image'] = func
         template = environment.from_string(self.html)
 
         rendered = template.render(**kwargs)
@@ -131,11 +134,12 @@ class Overlay:
         with open(template_file_path, "w") as f:
             f.write(html)
 
-        # wkhtmltox_file_path = "third-party\\wkhtmltox\\wkhtmltopdf.exe"
         wkhtmltox_file_path = "c:\\wkhtmltox\\wkhtmltopdf.exe"
 
         if not os.path.exists(wkhtmltox_file_path):
-            raise FileNotFoundError(f"Can't find file: {wkhtmltox_file_path}")
+            basedir = os.path.dirname(os.path.abspath(__file__))
+            wkhtmltox_file_path = os.path.join(basedir,"third-party\\wkhtmltopdf.exe")
+            # raise FileNotFoundError(f"Can't find file: {wkhtmltox_file_path}")
 
         os.system(
         f"{wkhtmltox_file_path} "
@@ -148,7 +152,7 @@ class Overlay:
         f"{overlay_file_path}"
         )
 
-        overlay_reader = PdfFileReader(open(overlay_file_path, 'rb'))
+        overlay_reader = PdfReader(open(overlay_file_path, 'rb'))
         result = overlay_reader.pages[0]
 
         return result

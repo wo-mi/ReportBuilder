@@ -1,7 +1,7 @@
 import os
 import jinja2
 import tempfile
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfReader
 from .page import Page
 
 class TableOfContent:
@@ -52,9 +52,10 @@ class TableOfContent:
             if not document.show_in_toc:
                 continue
 
-            line = f"{document.number:>4}. {document.title:.<60}{document.pages[0].full_number:.>10}"
+            line = f"{document.number:>3}. {document.title:.<55}" \
+                    f"{document.pages[0].full_number:.>10}"
             line = line.replace(" ","&nbsp;")
-            items.append(line) 
+            items.append(line)
 
         return items
 
@@ -82,27 +83,29 @@ class TableOfContent:
         with open(template_file_path, "w") as f:
             f.write(html)
 
-        # wkhtmltox_file_path = "third-party\\wkhtmltox\\wkhtmltopdf.exe"
         wkhtmltox_file_path = "c:\\wkhtmltox\\wkhtmltopdf.exe"
 
         if not os.path.exists(wkhtmltox_file_path):
-            raise FileNotFoundError(f"Can't find file: {wkhtmltox_file_path}")
+            basedir = os.path.dirname(os.path.abspath(__file__))
+            wkhtmltox_file_path = os.path.join(basedir,"third-party\\wkhtmltopdf.exe")
+            # raise FileNotFoundError(f"Can't find file: {wkhtmltox_file_path}")
 
         os.system(
         f"{wkhtmltox_file_path} "
         f"--log-level warn "
         f"--enable-local-file-access "
-        f"--margin-bottom 30 --margin-top 30 --margin-left 0 --margin-right 0 "
+        f"--margin-bottom 40 --margin-top 40 --margin-left 0 --margin-right 0 "
         f"{template_file_path} "
         f"{overlay_file_path}"
         )
 
-        toc_reader = PdfFileReader(open(overlay_file_path, 'rb'))
+        toc_reader = PdfReader(open(overlay_file_path, 'rb'))
 
         return toc_reader
 
     def get_template(self):
-        templates_dir = os.path.join("ReportBuilder", "templates")
+        basedir = os.path.dirname(os.path.abspath(__file__))
+        templates_dir = os.path.join(basedir, "templates")
         template_filename = f"{self.template}.html"
         template_file_path = os.path.join(templates_dir, template_filename)
 
@@ -110,7 +113,7 @@ class TableOfContent:
             raise FileNotFoundError(f"Can't find file: {template_filename}")
 
         with open(template_file_path, encoding="utf-8") as f:
-            html = f.read()   
+            html = f.read()
 
         return html
 
@@ -128,5 +131,5 @@ class TableOfContent:
         info_dict = {
             "title" : self.title,
             "template" : self.overlay_template
-        }
+            }
         return info_dict

@@ -1,10 +1,13 @@
 import os
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfReader
 import re
 from .page import Page
 
 class Document():
-    def __init__(self, path):
+    def __init__(self):
+        pass
+
+    def build_from_file(self, path):
         self.number = 0
         self.path = path
         self.filename = os.path.basename(self.path)
@@ -16,18 +19,24 @@ class Document():
         self.number_suffix = ""
         self.show_in_toc = True
 
-        self.pdf_reader = self.get_pdf_reader()     
-           
+        self.build()
+
+    def build(self):
+        self.pdf_reader = self.get_pdf_reader()
+
         self.origin_number_of_pages = self.get_pdf_number_of_pages()
 
-        self.target_range_start = 0        
+        self.target_range_start = 0
         self.target_range_end = self.origin_number_of_pages
-        
+
         self.origin_pages = self.get_origin_pages()
 
     def apply_config(self, config):
         self.config = config
         document_config_json = self.config.get_document_config_json(self.filename)
+
+        if document_config_json is None:
+            return
 
         if "title" in document_config_json:
             self.title = document_config_json["title"]
@@ -71,11 +80,11 @@ class Document():
         else:
             end = int(end)
 
-        self.target_range_start = start        
+        self.target_range_start = start
         self.target_range_end = end
-    
+
     def get_pdf_reader(self):
-        return PdfFileReader(open(self.path, "rb"))
+        return PdfReader(open(self.path, "rb"))
 
     def get_origin_pages(self):
         result = []
@@ -88,10 +97,10 @@ class Document():
 
     def number_pages(self, last=0):
         if self.start_number is None:
-            i = last            
+            i = last
         else:
             i = self.start_number - 1
-        
+
         for page in self.pages:
             i+=1
             page.number = i
