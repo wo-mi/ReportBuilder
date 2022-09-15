@@ -1,13 +1,8 @@
-from ReportBuilder import Project
-import time
+from webapp import create_app
 
-def main():
-    project = Project()
-    project.build_from_dir("Test project")
-    project.merge()
-    project.save()
+app = create_app()
+
+print(app.url_map)
 
 if __name__ == "__main__":
-    start_time = time.time()
-    main()
-    print(f"--- {time.time() - start_time} seconds ---")
+    app.run(debug=False)
