@@ -4,7 +4,7 @@ import json
 
 class Config:
     def __init__(self):
-        self.data = None
+        self.data = {}
 
     def load_from_file(self, path):
         if not os.path.exists(path):
@@ -15,7 +15,16 @@ class Config:
             with open(path) as f:
                 self.data = json.load(f)
         except Exception as e:
-            print("Can't parse config file...")
+            raise SyntaxError("Can't parse config file...")
+
+    def load_from_string(self, strng=""):
+        if strng == "":
+            strng = "{}"
+
+        try:
+            self.data = json.loads(strng)
+        except Exception as e:
+            raise SyntaxError("Can't parse config...")
 
     def get_document_config_json(self, filename):
         if "documents" in self.data:
@@ -48,4 +57,4 @@ class Config:
             toc_config = self.data["table_of_content"]
             return toc_config
         else:
-            return None
+            return {}

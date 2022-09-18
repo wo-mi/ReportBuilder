@@ -11,21 +11,30 @@ CONFIG_FILENAME = "config.json"
 class Project:
 
     def __init__(self):
-        self.title = ""
+        self.title = "Default"
         self.documents = []
-        self.output_filename = ""
+        self.output_filename = "Default"
 
-    def build_from_dir(self, path):
-        if not os.path.isdir(path):
-            raise NotADirectoryError(f"Wrong path to project folder: {path}")
+    def build_from_dir(self, dir_path):
+        if not os.path.isdir(dir_path):
+            raise NotADirectoryError(f"Wrong path to project folder: {dir_path}")
 
-        self.title = os.path.basename(path)
-        self.output_filename = os.path.basename(path)
+        self.title = os.path.basename(dir_path)
+        self.output_filename = os.path.basename(dir_path)
 
         self.config = Config()
-        self.config.load_from_file(os.path.join(path, CONFIG_FILENAME))
+        self.config.load_from_file(os.path.join(dir_path, CONFIG_FILENAME))
 
-        self.find_documents_in_dir(path)
+        self.load_documents_from_dir(dir_path)
+
+        self.build()
+
+    def build_from_database(self, config, files_list):
+
+        self.config = Config()
+        self.config.load_from_string(config)
+
+        self.load_documents_from_list(files_list)
 
         self.build()
 
@@ -39,8 +48,8 @@ class Project:
         self.table_of_content = TableOfContent(self)
         self.table_of_content.insert()
 
-    def find_documents_in_dir(self, path):
-        filenames = os.listdir(path)
+    def load_documents_from_dir(self, dir_path):
+        filenames = os.listdir(dir_path)
 
         for filename in filenames:
             if filename == CONFIG_FILENAME:
@@ -48,11 +57,38 @@ class Project:
             if filename.startswith("."):
                 continue
 
-            document_path = os.path.join(path, filename)
             document = Document()
+            document_path = os.path.join(dir_path, filename)
             document.build_from_file(document_path)
 
             self.documents.append(document)
+
+        if len(self.documents) == 0:
+            raise Exception("No document files")
+
+    def load_documents_from_list(self, files_list):
+        for file in files_list:
+            filename = file[0]
+            file_path = file[1]
+
+            if not os.path.exists(file_path):
+                raise Exception("Wrong document path")
+            
+            document = Document()
+            document.build_from_file(path=file_path, filename=filename)
+
+            self.documents.append(document)
+
+        if len(self.documents) == 0:
+            raise Exception("No document files")
+
+    def open_documents(self):
+        for document in self.documents:
+            document.open()
+
+    def close_documents(self):
+        for document in self.documents:
+            document.close()
 
     def apply_config(self):
 
@@ -100,6 +136,7 @@ class Project:
     def save(self,dir_path=""):
         destination = os.path.join(dir_path, f"{self.output_filename}.pdf")
         shutil.move(self.temp_output_pdf_path, destination)
+        return os.path.abspath(destination)
 
     @property
     def info(self):

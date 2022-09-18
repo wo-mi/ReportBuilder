@@ -7,10 +7,15 @@ class Document():
     def __init__(self):
         pass
 
-    def build_from_file(self, path):
+    def build_from_file(self, path, filename=None):
         self.number = 0
         self.path = path
-        self.filename = os.path.basename(self.path)
+
+        if filename is None:
+            self.filename = os.path.basename(self.path)
+        else:
+            self.filename = filename
+
         self.title = self.filename
         self.overlay_template = "default"
         self.config = None
@@ -84,7 +89,17 @@ class Document():
         self.target_range_end = end
 
     def get_pdf_reader(self):
-        return PdfReader(open(self.path, "rb"))
+        try:
+            return PdfReader(open(self.path, "rb"))
+        except Exception as e:
+            raise Exception("Incorrect file")
+
+    def close(self):
+        try:
+            self.pdf_reader.stream.close()
+            self.pdf_reader = None
+        except Exception as e:
+            raise Exception("Cant close reader stream")
 
     def get_origin_pages(self):
         result = []

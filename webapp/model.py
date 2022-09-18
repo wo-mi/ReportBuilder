@@ -8,11 +8,11 @@ class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
-    password_hash = db.Column(db.String(100), nullable=False)    
+    password_hash = db.Column(db.String(100), nullable=False)
     role = db.Column(db.Text)
 
     projects = db.relationship('Project', back_populates='user')
-    
+
     @property
     def roles(self):
         return self.role.split()
@@ -29,8 +29,7 @@ class User(db.Model):
 class Project(db.Model):
     __tablename__ = "projects"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    docs = db.Column(db.Text)
+    name = db.Column(db.Text)
     config = db.Column(db.Text)
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -57,7 +56,11 @@ class File(db.Model):
 
     @property
     def relative_path(self):
-        return os.path.join("upload", self.uuid[0], self.uuid[1], self.uuid)
+        return os.path.join("webapp\\upload", self.uuid[0], self.uuid[1], self.uuid)
+
+    def remove_upload(self):
+        if os.path.exists(self.relative_path):
+            os.remove(self.relative_path)
 
     def __repr__(self):
         return f'<File {self.name}>'

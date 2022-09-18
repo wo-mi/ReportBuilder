@@ -12,9 +12,6 @@ auth = MultiAuth(basic_auth, token_auth)
 
 
 @basic_auth.get_user_roles
-def get_user_roles(user):
-    return user.roles
-
 @token_auth.get_user_roles
 def get_user_roles(user):
     return user.roles
@@ -39,18 +36,18 @@ def verify_auth_token(token):
         return False
     except Exception:
         return False
-    
+
     user = User.query.get(data['id'])
-    
+
     if user is not None:
         g.user = user
         return user
-    
+
     return False
 
 def auth_token(user, duration = 60):
-    expiration = datetime.now(tz=timezone.utc) + timedelta(seconds=duration)   
-    
+    expiration = datetime.now(tz=timezone.utc) + timedelta(seconds=duration)
+
     payload = { 'id': user.id, "exp": expiration}
     secret = current_app.config['SECRET_KEY']
     token = jwt.encode(payload, secret, algorithm="HS256")

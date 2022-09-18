@@ -21,5 +21,6 @@ def save_file(project, file):
         os.makedirs(os.path.dirname(new_file.relative_path))
 
     file.save(new_file.relative_path)
+    file.close()
 
     return True

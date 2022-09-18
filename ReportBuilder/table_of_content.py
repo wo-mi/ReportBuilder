@@ -45,6 +45,13 @@ class TableOfContent:
 
         return self.build(rendered_html)
 
+    def close(self):
+        try:
+            self.pdf_reader.stream.close()
+            self.pdf_reader = None
+        except Exception as e:
+            raise Exception("Cant close reader stream")
+
     def get_toc_items(self):
         items = []
 
