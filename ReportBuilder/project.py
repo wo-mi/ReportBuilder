@@ -1,6 +1,5 @@
 import os, shutil
 from .document import Document
-from .page import Page
 from .table_of_content import TableOfContent
 from .config import Config
 from .merger import Merger
@@ -9,37 +8,34 @@ from .merger import Merger
 CONFIG_FILENAME = "config.json"
 
 class Project:
-
     def __init__(self):
-        self.title = "Default"
         self.documents = []
-        self.output_filename = "Default"
+        self.config = Config()        
 
     def build_from_dir(self, dir_path):
         if not os.path.isdir(dir_path):
             raise NotADirectoryError(f"Wrong path to project folder: {dir_path}")
 
-        self.title = os.path.basename(dir_path)
-        self.output_filename = os.path.basename(dir_path)
-
-        self.config = Config()
-        self.config.load_from_file(os.path.join(dir_path, CONFIG_FILENAME))
+        self.config.from_file(os.path.join(dir_path, CONFIG_FILENAME))
 
         self.load_documents_from_dir(dir_path)
 
         self.build()
 
     def build_from_database(self, config, files_list):
-
-        self.config = Config()
-        self.config.load_from_string(config)
+        self.config.from_json_string(config)
 
         self.load_documents_from_list(files_list)
 
         self.build()
 
     def build(self):
-        self.apply_config()
+        self.title = self.config.get(
+                            "Default",
+                            self.config["title"])
+        self.output_filename = self.config.get(
+                            "Default",
+                            self.config["output_filename"])
 
         self.set_documents_in_order()
 
@@ -59,7 +55,7 @@ class Project:
 
             document = Document()
             document_path = os.path.join(dir_path, filename)
-            document.build_from_file(document_path)
+            document.build_from_file(document_path, config=self.config)
 
             self.documents.append(document)
 
@@ -75,7 +71,8 @@ class Project:
                 raise Exception("Wrong document path")
             
             document = Document()
-            document.build_from_file(path=file_path, filename=filename)
+            document.build_from_file(path=file_path, filename=filename, 
+                config=self.config)
 
             self.documents.append(document)
 
@@ -90,24 +87,16 @@ class Project:
         for document in self.documents:
             document.close()
 
-    def apply_config(self):
+    def get_documents_order(self):
+        result = []
+        for document_filename in self.config.documents:
+            result.append(document_filename)
 
-        if "title" in self.config.data:
-            self.title = self.config.data["title"]
-
-        if "output_filename" in self.config.data:
-            self.output_filename = self.config.data["output_filename"]
-
-        if "overlay_template" in self.config.data:
-            for document in self.documents:
-                document.overlay_template = self.config.data["overlay_template"]
-
-        for document in self.documents:
-            document.apply_config(self.config)
+        return result
 
     def set_documents_in_order(self):
         result = []
-        order_list = self.config.get_documents_order()
+        order_list = self.get_documents_order()
         
         for filename in order_list:
             for i in range(len(self.documents)):

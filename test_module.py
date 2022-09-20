@@ -15,7 +15,6 @@ class TestWeb(unittest.TestCase):
         self.token = test_auth.run()
         self.assertTrue(self.token)
 
-
     def test_A(self):
         self.assertTrue(test_project_add.run(self.token))
     def test_B(self):

@@ -4,10 +4,7 @@ import re
 from .page import Page
 
 class Document():
-    def __init__(self):
-        pass
-
-    def build_from_file(self, path, filename=None):
+    def build_from_file(self, path, filename=None, config=None):
         self.number = 0
         self.path = path
 
@@ -16,60 +13,47 @@ class Document():
         else:
             self.filename = filename
 
-        self.title = self.filename
-        self.overlay_template = "default"
-        self.config = None
-        self.start_number = None
-        self.number_prefix = ""
-        self.number_suffix = ""
-        self.show_in_toc = True
+        self.config = config
 
-        self.build()
+        self.title = self.config.get(
+                        self.filename,
+                        self.config.documents[self.filename]["title"])
+        self.overlay_template = self.config.get(
+                        "", 
+                        self.config.documents[self.filename]["overlay_template"],
+                        self.config["overlay_template"])
+        self.show_in_toc = self.config.get(
+                        True,
+                        self.config.documents[self.filename]["show_in_toc"])
+        self.number_prefix = self.config.get(
+                        "",
+                        self.config.documents[self.filename]["number_prefix"])
+        self.number_suffix = self.config.get(
+                        "",
+                        self.config.documents[self.filename]["number_suffix"])
+        
+        try:
+            self.start_number = int(self.config.documents[self.filename]["start_number"])
+        except:
+            self.start_number = None
 
-    def build(self):
         self.pdf_reader = self.get_pdf_reader()
 
         self.origin_number_of_pages = self.get_pdf_number_of_pages()
+        self.origin_pages = self.get_origin_pages()
 
         self.target_range_start = 0
         self.target_range_end = self.origin_number_of_pages
 
-        self.origin_pages = self.get_origin_pages()
-
-    def apply_config(self, config):
-        self.config = config
-        document_config_json = self.config.get_document_config_json(self.filename)
-
-        if document_config_json is None:
-            return
-
-        if "title" in document_config_json:
-            self.title = document_config_json["title"]
-
-        if "overlay_template" in document_config_json:
-            self.overlay_template = document_config_json["overlay_template"]
-
-        if "part" in document_config_json:
-            range_strng = document_config_json["part"]
-            self.interpret_target_range_string(range_strng)
-
-        if "number_prefix" in document_config_json:
-            self.number_prefix = document_config_json["number_prefix"]
-
-        if "number_suffix" in document_config_json:
-            self.number_suffix = document_config_json["number_suffix"]
-
-        if "start_number" in document_config_json:
-            self.start_number = int(document_config_json["start_number"])
-
-        if "show_in_toc" in document_config_json:
-            if document_config_json["show_in_toc"].lower() == "false":
-                self.show_in_toc = False
+        self.interpret_target_range_string(self.config.documents[self.filename]["part"])
 
     def get_pdf_number_of_pages(self):
         return len(self.pdf_reader.pages)
 
     def interpret_target_range_string(self,strng):
+        if strng is None:
+            return None
+
         pattern = re.compile("^\[\d*:\d*]$")
         if not pattern.match(strng):
             raise SyntaxError("Wrong part range syntax")

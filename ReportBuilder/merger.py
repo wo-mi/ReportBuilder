@@ -2,12 +2,12 @@ import os
 from datetime import datetime
 from PyPDF2 import PdfWriter, PdfReader
 import jinja2
-import tempfile
 
 class Merger:
 
     def __init__(self, project):
         self.project = project
+        self.config = self.project.config
         self.templates = self.get_templates()
 
     def merge(self):
@@ -40,7 +40,7 @@ class Merger:
                                             document = document.info,
                                             page = page.info)
 
-                    overlay = Overlay()
+                    overlay = Overlay(self.config)
                     overlay_pdf = overlay.build(html, page)     
 
                     new_page = page.get()
@@ -56,11 +56,10 @@ class Merger:
     def save_temp_pdf(self, writer):
         writer.page_layout = "/SinglePage"
 
-        system_temp_dir = tempfile.gettempdir()
-        program_temp_dir = os.path.join(system_temp_dir, "ReportBuilder")
-
+        program_temp_dir = os.path.join(self.config["USER_DIR_PATH"], "Temp")
+        
         if not os.path.isdir(program_temp_dir):
-            os.mkdir(program_temp_dir)
+            os.makedirs(program_temp_dir)
 
         output_file_temp_path = os.path.join(program_temp_dir, "output.pdf")
 
@@ -117,16 +116,17 @@ class Template:
 
 class Overlay:
     i = 1
+    def __init__(self, config):
+        self.config = config
 
     def build(self, html, page):
         num = __class__.i
         __class__.i += 1
 
-        system_temp_dir = tempfile.gettempdir()
-        program_temp_dir = os.path.join(system_temp_dir, "ReportBuilder")
+        program_temp_dir = os.path.join(self.config["USER_DIR_PATH"], "Temp")
 
         if not os.path.isdir(program_temp_dir):
-            os.mkdir(program_temp_dir)
+            os.makedirs(program_temp_dir)
 
         template_file_path = os.path.join(program_temp_dir,"overlay.html")
         overlay_file_path = os.path.join(program_temp_dir,f"overlay{num}.pdf")
@@ -134,7 +134,7 @@ class Overlay:
         with open(template_file_path, "w") as f:
             f.write(html)
 
-        wkhtmltox_file_path = "c:\\wkhtmltox\\wkhtmltopdf.exe"
+        wkhtmltox_file_path = self.config["WKHTMLTOPDF_PATH"]
 
         if not os.path.exists(wkhtmltox_file_path):
             basedir = os.path.dirname(os.path.abspath(__file__))

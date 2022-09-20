@@ -17,15 +17,14 @@ def run(token):
             "template": "table_of_content",
             "overlay_template": "default"
         },
-        "documents": [
-            {
-                "filename":"filename.pdf",
+        "documents": {
+            "filename.pdf" : {
                 "title":"First document",
                 "overlay_template" : "default",
                 "number_prefix" : "",
                 "start_number" : 1
             }
-        ]
+        }
     }
     '''
 

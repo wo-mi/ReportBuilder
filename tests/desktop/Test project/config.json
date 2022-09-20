@@ -5,34 +5,28 @@
     "table_of_content" : {
         "title": "Table of contents",
         "position": 1,
-        "template": "table_of_content",
-        "overlay_template": "default"
+        "template": "table_of_content"
     },
-    "documents": [
-        {
-            "filename":"cover.pdf",
+    "documents": {
+        "cover.pdf" : {
             "overlay_template":"",
-            "show_in_toc":"False"
+            "show_in_toc":false
         },
-        {
-            "filename":"document 1.pdf",
+        "document 1.pdf" : {
             "title":"First document",
             "overlay_template" : "default",
             "number_prefix" : "",
             "start_number" : 1
         },
-        {
-            "filename":"document 2.pdf",
+        "document 2.pdf" : {
             "title":"Another document",
             "part":"[:2]"
         },
-        {
-            "filename":"document 3.pdf",
+        "document 3.pdf" : {
             "title":"Report"
         },
-        {
-            "filename":"document 4.pdf",
+        "document 4.pdf" : {
             "title":"Summary"
         }
-    ]
+    }
 }

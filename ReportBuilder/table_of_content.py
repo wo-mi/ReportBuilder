@@ -1,6 +1,5 @@
 import os
 import jinja2
-import tempfile
 from PyPDF2 import PdfReader
 from .page import Page
 
@@ -9,38 +8,28 @@ class TableOfContent:
 
     def __init__(self, project):
         self.project = project
-        self.title = "Table of content"
-        self.template = "table_of_content"
-        self.overlay_template = ''
-        self.position = 0
-
-        self.apply_config()
+        self.config = self.project.config
+        self.title = self.config.get(
+                            "Table of content",
+                            self.config.table_of_content["title"])
+        self.template = self.config.get(
+                            "table_of_content",
+                            self.config.table_of_content["template"])
+        self.overlay_template = self.config.get(
+                            "",
+                            self.config.table_of_content["overlay_template"])
+        self.position = self.config.get(
+                            0,
+                            self.config.table_of_content["position"])
 
         self.pdf_reader = self.get_pdf_reader()
         self.pages = self.get_pages()
-
-    def apply_config(self):
-        self.config = self.project.config
-        toc_config_json = self.config.get_toc_config_json()
-
-        if "title" in toc_config_json:
-            self.title = toc_config_json["title"]
-
-        if "template" in toc_config_json:
-            self.template = toc_config_json["template"]
-
-        if "overlay_template" in toc_config_json:
-            self.overlay_template = toc_config_json["overlay_template"]
-
-        if "position" in toc_config_json:
-            self.position = int(toc_config_json["position"])
-
 
     def insert(self):
         self.project.documents.insert(self.position,self)
 
     def get_pdf_reader(self):
-        items = self.get_toc_items()
+        items = self.get_table_of_content_items()
         rendered_html = self.render(title = self.title, items = items)
 
         return self.build(rendered_html)
@@ -52,7 +41,7 @@ class TableOfContent:
         except Exception as e:
             raise Exception("Cant close reader stream")
 
-    def get_toc_items(self):
+    def get_table_of_content_items(self):
         items = []
 
         for document in self.project.documents:
@@ -78,11 +67,10 @@ class TableOfContent:
         num = __class__.i
         __class__.i += 1
 
-        system_temp_dir = tempfile.gettempdir()
-        program_temp_dir = os.path.join(system_temp_dir, "ReportBuilder")
+        program_temp_dir = os.path.join(self.config["USER_DIR_PATH"], "Temp")
 
         if not os.path.isdir(program_temp_dir):
-            os.mkdir(program_temp_dir)
+            os.makedirs(program_temp_dir)
 
         template_file_path = os.path.join(program_temp_dir,"table_of_content.html")
         overlay_file_path = os.path.join(program_temp_dir,f"table_of_content{num}.pdf")
@@ -90,7 +78,7 @@ class TableOfContent:
         with open(template_file_path, "w") as f:
             f.write(html)
 
-        wkhtmltox_file_path = "c:\\wkhtmltox\\wkhtmltopdf.exe"
+        wkhtmltox_file_path = self.config["WKHTMLTOPDF_PATH"]
 
         if not os.path.exists(wkhtmltox_file_path):
             basedir = os.path.dirname(os.path.abspath(__file__))
