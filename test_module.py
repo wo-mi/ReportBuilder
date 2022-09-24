@@ -1,55 +1,55 @@
-import unittest
+import pytest
 from ReportBuilder import Project
 from tests.web import *
 
 
-class TestDesktop(unittest.TestCase):
+class TestDesktop:
     def test(self):
         project = Project()
         project.build_from_dir("tests\\desktop\\Test project")
         project.merge()
         project.save("tests\\desktop\\")
 
-class TestWeb(unittest.TestCase):
-    def setUp(self):
-        self.token = test_auth.run()
-        self.assertTrue(self.token)
 
-    def test_A(self):
-        self.assertTrue(test_project_add.run(self.token))
-    def test_B(self):
-        self.assertTrue(test_projects_get.run(self.token))
+class TestWeb:
+    @pytest.fixture(scope='session')
+    def token(self):
+        return test_auth.run()
 
-    def test_C(self):
-        self.assertTrue(test_config_add.run(self.token))
-    def test_D(self):
-        self.assertTrue(test_config_get.run(self.token))
+    def test_A(self, token):
+        assert test_project_add.run(token) == True
+    def test_B(self, token):
+        assert test_projects_get.run(token) == True
 
-    def test_E(self):
-        self.assertTrue(test_file_add.run(self.token))
+    def test_C(self, token):
+        assert test_config_add.run(token) == True
+    def test_D(self, token):
+        assert test_config_get.run(token) == True
 
-    def test_F(self):
-        self.assertTrue(test_admin.run(self.token))
+    def test_E(self, token):
+        assert test_file_add.run(token) == True
 
-    def test_G(self):
-        self.assertTrue(test_user_add.run(self.token))
-    def test_H(self):
-        self.assertTrue(test_users_get.run(self.token))
-    def test_I(self):
-        self.assertTrue(test_user_get.run(self.token))
+    def test_F(self, token):
+        assert test_admin.run(token) == True
 
-    def test_J(self):
-        test_project_get.run(self.token)
+    def test_G(self, token):
+        assert test_user_add.run(token) == True
+    def test_H(self, token):
+        assert test_users_get.run(token) == True
+    def test_I(self, token):
+        assert test_user_get.run(token) == True
 
-    def test_K(self):
-        self.assertTrue(test_file_delete.run(self.token))
-    def test_L(self):
-        self.assertTrue(test_project_delete.run(self.token))
-    def test_M(self):
-        self.assertTrue(test_user_delete.run(self.token))
+    def test_J(self, token):
+        test_project_get.run(token)
+
+    def test_K(self, token):
+        assert test_file_delete.run(token) == True
+    def test_L(self, token):
+        assert test_project_delete.run(token) == True
+    def test_M(self, token):
+        assert test_user_delete.run(token) == True
 
 if __name__ == '__main__':
-    # unittest.main()
-    # suite = unittest.TestLoader().loadTestsFromTestCase(TestDesktop)
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestWeb)
-    unittest.TextTestRunner().run(suite)
+    pytest.main(['-q'])
+    # pytest.main(['-q','-v','test_module.py::TestDesktop'])
+    # pytest.main(['-q','-v','test_module.py::TestWeb'])
